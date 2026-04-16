@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>Daily Quest Widget Pro</title>
+  <style>
+    :root{
+      --bg:#0a1020; --panel:#111930; --panel2:#172344; --text:#eef3ff; --muted:#9fb0da;
+      --accent:#7c9cff; --accent2:#8ef0c8; --gold:#ffd76a; --danger:#ff8c9b; --warn:#ffb86c; --ok:#8ef0c8;
+    }
+    *{box-sizing:border-box} html,body{margin:0;height:100%;font-family:Inter,system-ui,-apple-system,sans-serif;color:var(--text);
+      background:radial-gradient(circle at top, rgba(124,156,255,.22), transparent 25%), radial-gradient(circle at bottom right, rgba(142,240,200,.12), transparent 20%), var(--bg);}
+    body{padding:env(safe-area-inset-top) 12px env(safe-area-inset-bottom) 12px}
+    .app{max-width:760px;margin:0 auto;padding:10px 0 24px}
+    .sticky{position:sticky;top:0;z-index:20;background:linear-gradient(180deg, rgba(10,16,32,.98), rgba(10,16,32,.86), rgba(10,16,32,.45), transparent);backdrop-filter:blur(10px);padding-top:8px}
+    .widget{background:linear-gradient(180deg, rgba(255,255,255,.03), rgba(255,255,255,.01));border:1px solid rgba(255,255,255,.08);border-radius:24px;overflow:hidden;box-shadow:0 16px 40px rgba(0,0,0,.35)}
+    .header{padding:16px;background:linear-gradient(180deg, rgba(124,156,255,.18), rgba(124,156,255,.06));border-bottom:1px solid rgba(255,255,255,.08)}
+    .topline{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}
+    .title{font-size:1.2rem;font-weight:800}.subtitle{font-size:.9rem;color:var(--muted);margin-top:4px}
+    .badge{padding:8px 12px;border-radius:999px;background:rgba(255,255,255,.08);color:var(--gold);font-weight:800;border:1px solid rgba(255,255,255,.08);white-space:nowrap}
+    .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:14px}
+    .stat{background:rgba(8,12,24,.28);border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:12px}
+    .label{font-size:.78rem;color:var(--muted);margin-bottom:4px}.value{font-size:1.15rem;font-weight:800}
+    .content{display:grid;gap:14px;padding:14px}.card{background:var(--panel);border:1px solid rgba(255,255,255,.08);border-radius:18px;padding:14px}
+    .card-title{display:flex;justify-content:space-between;gap:8px;align-items:center;margin-bottom:10px;font-weight:800}.hint,.small{font-size:.82rem;color:var(--muted)}
+    .progress-shell{position:relative;width:100%;height:18px;border-radius:999px;background:#0c1226;overflow:hidden;border:1px solid rgba(255,255,255,.06)}
+    .progress-fill{height:100%;width:0;background:linear-gradient(90deg,var(--accent),var(--accent2));transition:width .25s ease}
+    .goal-markers{position:relative;height:28px;margin-top:8px}.goal-marker{position:absolute;top:0;transform:translateX(-50%);text-align:center}
+    .goal-marker .dot{width:12px;height:12px;border-radius:999px;background:#263357;border:2px solid rgba(255,255,255,.15);margin:0 auto 2px}
+    .goal-marker.done .dot{background:var(--ok);border-color:transparent}.goal-marker span{font-size:.66rem;color:var(--muted);white-space:nowrap}
+    .rowmeta{display:flex;justify-content:space-between;gap:12px;align-items:center;margin-top:10px;color:var(--muted);font-size:.88rem}
+    .section-grid{display:grid;gap:14px}
+    .task-list,.reward-list,.milestone-list{display:grid;gap:10px;max-height:42vh;overflow:auto;padding-right:2px}
+    .task,.reward,.milestone{background:var(--panel2);border:1px solid rgba(255,255,255,.06);border-radius:14px;padding:12px;display:grid;gap:10px;align-items:center}
+    .task{grid-template-columns:auto 1fr auto auto}.reward{grid-template-columns:1fr auto auto}.milestone{grid-template-columns:1fr auto auto}
+    .checkbox{width:22px;height:22px;appearance:none;border-radius:8px;border:2px solid var(--accent);background:transparent;position:relative}
+    .checkbox:checked{background:linear-gradient(180deg,var(--accent),#5f78ff);border-color:transparent}.checkbox:checked::after{content:"✓";position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:white;font-weight:800;font-size:.9rem}
+    .done .main-title{text-decoration:line-through;color:#a9b4d6}.main-title{font-weight:700;word-break:break-word}.meta{font-size:.85rem;color:var(--muted);margin-top:2px}
+    .pill{padding:7px 10px;border-radius:999px;font-size:.82rem;font-weight:800;white-space:nowrap}.xp{background:rgba(142,240,200,.1);color:var(--accent2);border:1px solid rgba(142,240,200,.14)}
+    .locked{background:rgba(255,215,106,.08);color:var(--gold);border:1px solid rgba(255,215,106,.16)} .fail{background:rgba(255,140,155,.1);color:var(--danger);border:1px solid rgba(255,140,155,.16)} .ok{background:rgba(142,240,200,.1);color:var(--ok);border:1px solid rgba(142,240,200,.14)}
+    .icon-btn,.primary-btn,.ghost-btn{border:0;cursor:pointer;font:inherit}.icon-btn{width:32px;height:32px;border-radius:10px;background:rgba(255,140,155,.1);color:var(--danger);border:1px solid rgba(255,140,155,.15)}
+    input{width:100%;border-radius:12px;border:1px solid rgba(255,255,255,.09);background:#0d1430;color:var(--text);padding:11px 12px;outline:none} input::placeholder{color:#7f8db7}
+    .row3{display:grid;grid-template-columns:1.3fr .8fr auto;gap:10px;align-items:end}.row4{display:grid;grid-template-columns:1.1fr .75fr .9fr auto;gap:10px;align-items:end}
+    .primary-btn,.ghost-btn{border-radius:12px;padding:11px 14px;font-weight:800}.primary-btn{background:linear-gradient(180deg,var(--accent),#607aff);color:#fff}.ghost-btn{background:rgba(255,255,255,.06);color:var(--text);border:1px solid rgba(255,255,255,.08)}
+    .footer-actions{display:flex;gap:10px;justify-content:space-between;flex-wrap:wrap}.banner{padding:10px 12px;border-radius:12px;font-size:.86rem}.banner.warn{background:rgba(255,184,108,.1);color:var(--warn);border:1px solid rgba(255,184,108,.15)}.banner.fail{background:rgba(255,140,155,.1);color:var(--danger);border:1px solid rgba(255,140,155,.15)}
+    .graph{background:var(--panel2);border:1px solid rgba(255,255,255,.06);border-radius:14px;padding:12px}.graph-title{display:flex;justify-content:space-between;gap:8px;align-items:center;margin-bottom:8px;font-weight:700}
+    .trend{font-size:.82rem;padding:6px 10px;border-radius:999px}.trend.up{background:rgba(142,240,200,.1);color:var(--ok)}.trend.down{background:rgba(255,140,155,.1);color:var(--danger)}
+    .bars{display:flex;align-items:flex-end;gap:6px;height:120px;padding-top:10px}.bar-col{flex:1;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;min-width:0}.bar{width:100%;max-width:18px;border-radius:8px 8px 3px 3px;background:linear-gradient(180deg,var(--accent),var(--accent2));min-height:4px}.bar-label{font-size:.66rem;color:var(--muted);margin-top:6px;white-space:nowrap}.bar-value{font-size:.62rem;color:#c9d4f5;margin-bottom:4px}
+    @media (min-width:900px){.section-grid{grid-template-columns:1.05fr .95fr}}
+    @media (max-width:640px){.stats{grid-template-columns:1fr}.row3,.row4{grid-template-columns:1fr}.task{grid-template-columns:auto 1fr auto}.task .icon-btn{grid-column:3}.task-list,.reward-list,.milestone-list{max-height:none}.goal-marker span{font-size:.6rem}}
+  </style>
+</head>
+<body>
+<div class="app">
+  <div class="sticky">
+    <section class="widget"><div class="header">
+      <div class="topline">
+        <div><div class="title">🎮 Daily Quest Widget Pro</div><div class="subtitle" id="todayLabel"></div></div>
+        <div class="badge" id="levelBadge">Level 1</div>
+      </div>
+      <div class="stats">
+        <div class="stat"><div class="label">XP today</div><div class="value" id="xpToday">0</div></div>
+        <div class="stat"><div class="label">Completed</div><div class="value" id="completedCount">0</div></div>
+        <div class="stat"><div class="label">Streak</div><div class="value" id="streakCount">0 🔥</div></div>
+      </div>
+      <div style="margin-top:14px">
+        <div class="card-title" style="margin-bottom:8px"><span>XP Goal Track</span><span class="hint" id="goalTrackHint"></span></div>
+        <div class="progress-shell"><div class="progress-fill" id="goalFill"></div></div>
+        <div class="goal-markers" id="goalMarkers"></div>
+      </div>
+    </div></section>
+  </div>
+
+  <section class="content">
+    <div class="card">
+      <div class="card-title"><span>Level Progress</span><span class="hint" id="nextLevelHint"></span></div>
+      <div class="progress-shell"><div class="progress-fill" id="levelFill"></div></div>
+      <div class="rowmeta"><span id="totalXpLabel">Lifetime XP: 0</span><span id="xpRangeLabel">0 / 100</span></div>
+    </div>
+
+    <div id="milestoneAlert"></div>
+
+    <div class="section-grid">
+      <div class="card">
+        <div class="card-title"><span>Today's Quests</span><span class="hint">Top stays reachable</span></div>
+        <div class="task-list" id="taskList"></div>
+        <div style="margin-top:14px" class="row3">
+          <input id="taskName" placeholder="Add a quest..." />
+          <input id="taskPoints" type="number" min="1" max="999" placeholder="XP" />
+          <button class="primary-btn" id="addTaskBtn">Add</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title"><span>Reward Tiers</span><span class="hint">Unlocked by today's XP</span></div>
+        <div class="reward-list" id="rewardList"></div>
+        <div style="margin-top:14px" class="row3">
+          <input id="rewardName" placeholder="Add a reward..." />
+          <input id="rewardPoints" type="number" min="1" max="9999" placeholder="XP needed" />
+          <button class="primary-btn" id="addRewardBtn">Add</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><span>Timed XP Thresholds</span><span class="hint">Miss one and a penalty applies</span></div>
+      <div class="milestone-list" id="milestoneList"></div>
+      <div style="margin-top:14px" class="row4">
+        <input id="milestoneTime" type="time" />
+        <input id="milestoneXp" type="number" min="1" max="9999" placeholder="Min XP" />
+        <input id="milestonePenalty" type="number" min="0" max="999" placeholder="Penalty XP" />
+        <button class="primary-btn" id="addMilestoneBtn">Add</button>
+      </div>
+      <input id="milestonePunishment" placeholder="Optional punishment text, e.g. no sweet treat tonight" style="margin-top:10px" />
+    </div>
+
+    <div class="card">
+      <div class="card-title"><span>XP Trends</span><span class="hint">Daily, weekly, monthly</span></div>
+      <div class="graph">
+        <div class="graph-title"><span>Last 7 days</span><span class="trend" id="weeklyTrend">0%</span></div>
+        <div class="bars" id="weeklyBars"></div>
+      </div>
+      <div class="graph" style="margin-top:12px">
+        <div class="graph-title"><span>This month</span><span class="trend" id="monthlyTrend">0%</span></div>
+        <div class="bars" id="monthlyBars"></div>
+      </div>
+      <div class="graph" style="margin-top:12px">
+        <div class="graph-title"><span>Today by time block</span><span class="trend" id="dailyTrend">0%</span></div>
+        <div class="bars" id="dailyBars"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><span>Controls</span><span class="hint">Everything saves automatically</span></div>
+      <div class="footer-actions">
+        <button class="ghost-btn" id="resetDayBtn">Reset Today</button>
+        <button class="ghost-btn" id="seedBtn">Load Sample Data</button>
+      </div>
+      <div class="small" style="margin-top:12px">Phone notifications are possible, but reliable scheduled notifications usually need either a backend or a native app. Browser-only reminders are limited.</div>
+    </div>
+  </section>
+</div>
+
+<script>
+const STORAGE_KEY="dailyQuestWidgetData_v3";
+const esc=s=>String(s).replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;").replaceAll('"',"&quot;").replaceAll("'","&#39;");
+const sum=a=>a.reduce((x,y)=>x+y,0);
+const todayKey=(d=new Date())=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
+const prettyToday=()=>new Date().toLocaleDateString(undefined,{weekday:"long",month:"long",day:"numeric"});
+const parseMinutes=t=>{const [h,m]=t.split(":").map(Number);return h*60+m};
+const currentMinutes=()=>{const d=new Date();return d.getHours()*60+d.getMinutes()};
+
+function defaultState(){
+  return {
+    currentDate:todayKey(), totalXp:0, totalXpLifetime:0, streak:0, lastCompletedDate:null,
+    tasks:[
+      {id:crypto.randomUUID(),title:"Make bed",points:5,done:false},
+      {id:crypto.randomUUID(),title:"Workout",points:20,done:false},
+      {id:crypto.randomUUID(),title:"Deep work session",points:25,done:false}
+    ],
+    rewards:[
+      {id:crypto.randomUUID(),title:"Sweet treat",points:20},
+      {id:crypto.randomUUID(),title:"One episode guilt-free",points:40},
+      {id:crypto.randomUUID(),title:"Small purchase",points:70}
+    ],
+    milestones:[
+      {id:crypto.randomUUID(),time:"12:00",xp:15,penaltyXp:5,punishmentText:"No midday snack",resultDate:null,passed:null},
+      {id:crypto.randomUUID(),time:"18:00",xp:40,penaltyXp:10,punishmentText:"No scrolling before bed",resultDate:null,passed:null}
+    ],
+    historyDaily:{}, historyHourly:{}
+  };
+}
+function loadState(){try{const raw=localStorage.getItem(STORAGE_KEY);return raw?{...defaultState(),...JSON.parse(raw)}:defaultState()}catch{return defaultState()}}
+let state=loadState();
+const saveState=()=>localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+function normalizeHistory(d){ if(!state.historyHourly[d]) state.historyHourly[d]=Array(24).fill(0); if(typeof state.historyDaily[d]!="number") state.historyDaily[d]=0; }
+const computeTodayXp=()=>state.tasks.filter(t=>t.done).reduce((s,t)=>s+Number(t.points||0),0);
+const completedCount=()=>state.tasks.filter(t=>t.done).length;
+function levelFromXp(xp){ let level=1, threshold=100, remaining=xp, step=100; while(remaining>=threshold){remaining-=threshold;level++;step+=25;threshold=step} return {level,inLevelXp:remaining,needed:threshold,toNext:threshold-remaining};}
+function pctChange(cur, prev){ if(prev===0) return cur===0?0:100; return ((cur-prev)/prev)*100; }
+function pctLabel(v){ const r=Math.round(v); return `${r>0?"+":""}${r}%`; }
+
+function handleNewDay(){
+  const today=todayKey();
+  if(state.currentDate===today) return;
+  const prevDate=state.currentDate;
+  const prevXp=computeTodayXp();
+  normalizeHistory(prevDate); state.historyDaily[prevDate]=prevXp;
+
+  const yesterday=new Date(); yesterday.setDate(yesterday.getDate()-1);
+  const ykey=todayKey(yesterday);
+  if(prevXp>0){ state.streak=(state.lastCompletedDate===ykey)?state.streak+1:1; state.lastCompletedDate=prevDate; }
+
+  state.currentDate=today; state.totalXp=0;
+  state.tasks=state.tasks.map(t=>({...t,done:false}));
+  state.milestones=state.milestones.map(m=>({...m,resultDate:null,passed:null}));
+  normalizeHistory(today); saveState();
+}
+function maybeTrack(prevDone, nowDone, points){
+  normalizeHistory(state.currentDate);
+  const p=Number(points||0), h=new Date().getHours();
+  if(!prevDone && nowDone){ state.totalXpLifetime+=p; state.lastCompletedDate=todayKey(); state.historyHourly[state.currentDate][h]+=p; }
+  else if(prevDone && !nowDone){ state.totalXpLifetime=Math.max(0,state.totalXpLifetime-p); state.historyHourly[state.currentDate][h]=Math.max(0,state.historyHourly[state.currentDate][h]-p); }
+}
+function evaluateMilestones(){
+  const now=currentMinutes(), today=state.currentDate, xp=computeTodayXp(), alerts=[];
+  for(const m of state.milestones){
+    if(m.resultDate===today) continue;
+    if(now<parseMinutes(m.time)) continue;
+    if(xp>=Number(m.xp)){ m.resultDate=today; m.passed=true; alerts.push({type:"ok",text:`Checkpoint ${m.time} cleared: ${xp}/${m.xp} XP.`}); }
+    else { const pen=Number(m.penaltyXp||0); state.totalXpLifetime=Math.max(0,state.totalXpLifetime-pen); m.resultDate=today; m.passed=false; alerts.push({type:"fail",text:`Missed ${m.time}: needed ${m.xp} XP, had ${xp}. Penalty: -${pen} XP.${m.punishmentText?" Punishment: "+m.punishmentText:""}`}); }
+  }
+  return alerts;
+}
+function renderAlert(alerts){
+  const box=document.getElementById("milestoneAlert"); box.innerHTML="";
+  if(!alerts.length) return;
+  const a=alerts[alerts.length-1], div=document.createElement("div");
+  div.className="banner "+(a.type==="fail"?"fail":"warn"); div.textContent=a.text; box.appendChild(div);
+}
+function renderGoalTrack(){
+  const xp=computeTodayXp(), rewards=[...state.rewards].sort((a,b)=>a.points-b.points);
+  const maxGoal=Math.max(10,...rewards.map(r=>Number(r.points||0)),xp);
+  document.getElementById("goalFill").style.width=`${Math.min(100, xp/maxGoal*100)}%`;
+  document.getElementById("goalTrackHint").textContent=`${xp} / ${maxGoal} XP`;
+  const el=document.getElementById("goalMarkers"); el.innerHTML="";
+  rewards.forEach(r=>{
+    const m=document.createElement("div");
+    m.className="goal-marker"+(xp>=r.points?" done":"");
+    m.style.left=`${Math.min(100, r.points/maxGoal*100)}%`;
+    m.innerHTML=`<div class="dot"></div><span>${r.points}</span>`;
+    el.appendChild(m);
+  });
+}
+function renderTasks(){
+  const el=document.getElementById("taskList"); el.innerHTML="";
+  if(!state.tasks.length){ el.innerHTML='<div class="small">No quests yet. Add one below.</div>'; return; }
+  state.tasks.forEach(task=>{
+    const row=document.createElement("div"); row.className="task"+(task.done?" done":"");
+    const cb=document.createElement("input"); cb.type="checkbox"; cb.className="checkbox"; cb.checked=task.done;
+    cb.addEventListener("change",()=>{ const prev=task.done; task.done=cb.checked; maybeTrack(prev, task.done, task.points); render(); });
+    const main=document.createElement("div"); main.innerHTML=`<div class="main-title">${esc(task.title)}</div><div class="meta">${task.done?"Completed":"Ready"} · ${task.points} XP</div>`;
+    const pill=document.createElement("div"); pill.className="pill xp"; pill.textContent=`+${task.points} XP`;
+    const del=document.createElement("button"); del.className="icon-btn"; del.textContent="−"; del.onclick=()=>{ if(task.done) maybeTrack(true,false,task.points); state.tasks=state.tasks.filter(t=>t.id!==task.id); render(); };
+    row.append(cb,main,pill,del); el.appendChild(row);
+  });
+}
+function renderRewards(){
+  const xp=computeTodayXp(), el=document.getElementById("rewardList"); el.innerHTML="";
+  if(!state.rewards.length){ el.innerHTML='<div class="small">No rewards yet. Add one below.</div>'; return; }
+  [...state.rewards].sort((a,b)=>a.points-b.points).forEach(r=>{
+    const unlocked=xp>=r.points;
+    const row=document.createElement("div"); row.className="reward";
+    row.innerHTML=`<div><div class="main-title">${esc(r.title)}</div><div class="meta">${unlocked?"Unlocked for today":`${r.points-xp} XP left`}</div></div>`;
+    const pill=document.createElement("div"); pill.className="pill "+(unlocked?"ok":"locked"); pill.textContent=unlocked?"Unlocked":`${r.points} XP`;
+    const del=document.createElement("button"); del.className="icon-btn"; del.textContent="−"; del.onclick=()=>{ state.rewards=state.rewards.filter(x=>x.id!==r.id); render(); };
+    row.append(pill,del); el.appendChild(row);
+  });
+}
+function renderMilestones(){
+  const xp=computeTodayXp(), now=currentMinutes(), el=document.getElementById("milestoneList"); el.innerHTML="";
+  if(!state.milestones.length){ el.innerHTML='<div class="small">No timed thresholds yet. Add one below.</div>'; return; }
+  [...state.milestones].sort((a,b)=>parseMinutes(a.time)-parseMinutes(b.time)).forEach(m=>{
+    let cls="locked", text=`${m.xp} XP by ${m.time}`;
+    if(m.resultDate===state.currentDate){ cls=m.passed?"ok":"fail"; text=m.passed?"Passed":`Failed · -${m.penaltyXp} XP`; }
+    else if(now>=parseMinutes(m.time)){ cls=xp>=m.xp?"ok":"fail"; text=xp>=m.xp?"Should pass on refresh":"At risk"; }
+    const row=document.createElement("div"); row.className="milestone";
+    row.innerHTML=`<div><div class="main-title">${m.time} checkpoint</div><div class="meta">Need ${m.xp} XP · penalty -${m.penaltyXp} XP${m.punishmentText?" · "+esc(m.punishmentText):""}</div></div>`;
+    const pill=document.createElement("div"); pill.className="pill "+cls; pill.textContent=text;
+    const del=document.createElement("button"); del.className="icon-btn"; del.textContent="−"; del.onclick=()=>{ state.milestones=state.milestones.filter(x=>x.id!==m.id); render(); };
+    row.append(pill,del); el.appendChild(row);
+  });
+}
+function getLastNDates(n){ const out=[]; for(let i=n-1;i>=0;i--){ const d=new Date(); d.setDate(d.getDate()-i); out.push(todayKey(d)); } return out; }
+function renderBars(id, labels, values){
+  const el=document.getElementById(id); el.innerHTML=""; const max=Math.max(1,...values);
+  labels.forEach((lab,i)=>{ const val=values[i], pct=Math.max(3,val/max*100); const c=document.createElement("div"); c.className="bar-col"; c.innerHTML=`<div class="bar-value">${val}</div><div class="bar" style="height:${pct}%"></div><div class="bar-label">${lab}</div>`; el.appendChild(c); });
+}
+function renderGraphs(){
+  normalizeHistory(state.currentDate); state.historyDaily[state.currentDate]=computeTodayXp();
+
+  const weekDates=getLastNDates(7), weekVals=weekDates.map(d=>state.historyDaily[d]||0), weekLabels=weekDates.map(d=>d.slice(5).replace("-","/"));
+  renderBars("weeklyBars", weekLabels, weekVals);
+  const prevWeek=[]; for(let i=14;i>=8;i--){ const d=new Date(); d.setDate(d.getDate()-i); prevWeek.push(todayKey(d)); }
+  const wt=pctChange(sum(weekVals), sum(prevWeek.map(d=>state.historyDaily[d]||0))); const wel=document.getElementById("weeklyTrend"); wel.textContent=pctLabel(wt); wel.className="trend "+(wt>=0?"up":"down");
+
+  const now=new Date(), daysInMonth=new Date(now.getFullYear(),now.getMonth()+1,0).getDate();
+  const monthDates=[...Array(daysInMonth)].map((_,i)=>todayKey(new Date(now.getFullYear(),now.getMonth(),i+1)));
+  const monthVals=monthDates.map(d=>state.historyDaily[d]||0), monthLabels=monthDates.map(d=>String(Number(d.slice(8))));
+  renderBars("monthlyBars", monthLabels, monthVals);
+  const prevMonth=new Date(now.getFullYear(),now.getMonth()-1,1), prevDays=new Date(prevMonth.getFullYear(),prevMonth.getMonth()+1,0).getDate();
+  const prevMonthDates=[...Array(prevDays)].map((_,i)=>todayKey(new Date(prevMonth.getFullYear(),prevMonth.getMonth(),i+1)));
+  const mt=pctChange(sum(monthVals), sum(prevMonthDates.map(d=>state.historyDaily[d]||0))); const mel=document.getElementById("monthlyTrend"); mel.textContent=pctLabel(mt); mel.className="trend "+(mt>=0?"up":"down");
+
+  const hourly=state.historyHourly[state.currentDate]||Array(24).fill(0), blocks=[0,3,6,9,12,15,18,21], dVals=blocks.map(h=>hourly.slice(h,h+3).reduce((a,b)=>a+b,0)), dLabels=blocks.map(h=>String(h).padStart(2,"0"));
+  renderBars("dailyBars", dLabels, dVals);
+  const yd=new Date(); yd.setDate(yd.getDate()-1); const yh=state.historyHourly[todayKey(yd)]||Array(24).fill(0), yVals=blocks.map(h=>yh.slice(h,h+3).reduce((a,b)=>a+b,0));
+  const dt=pctChange(sum(dVals), sum(yVals)); const del=document.getElementById("dailyTrend"); del.textContent=pctLabel(dt); del.className="trend "+(dt>=0?"up":"down");
+}
+function addTask(){ const t=document.getElementById("taskName"), p=document.getElementById("taskPoints"); const title=t.value.trim(), points=Number(p.value); if(!title||!points||points<1)return; state.tasks.push({id:crypto.randomUUID(),title,points,done:false}); t.value=""; p.value=""; render(); t.focus(); }
+function addReward(){ const t=document.getElementById("rewardName"), p=document.getElementById("rewardPoints"); const title=t.value.trim(), points=Number(p.value); if(!title||!points||points<1)return; state.rewards.push({id:crypto.randomUUID(),title,points}); t.value=""; p.value=""; render(); t.focus(); }
+function addMilestone(){ const time=document.getElementById("milestoneTime").value, xp=Number(document.getElementById("milestoneXp").value), penaltyXp=Number(document.getElementById("milestonePenalty").value||0), punishmentText=document.getElementById("milestonePunishment").value.trim(); if(!time||!xp||xp<1)return; state.milestones.push({id:crypto.randomUUID(),time,xp,penaltyXp,punishmentText,resultDate:null,passed:null}); document.getElementById("milestoneTime").value=""; document.getElementById("milestoneXp").value=""; document.getElementById("milestonePenalty").value=""; document.getElementById("milestonePunishment").value=""; render(); }
+
+function render(){
+  handleNewDay(); normalizeHistory(state.currentDate);
+  state.totalXp=computeTodayXp(); state.historyDaily[state.currentDate]=state.totalXp;
+  const alerts=evaluateMilestones();
+  document.getElementById("todayLabel").textContent=prettyToday();
+  document.getElementById("xpToday").textContent=state.totalXp;
+  document.getElementById("completedCount").textContent=completedCount();
+  document.getElementById("streakCount").textContent=`${state.streak} 🔥`;
+  const info=levelFromXp(state.totalXpLifetime);
+  document.getElementById("levelBadge").textContent=`Level ${info.level}`;
+  document.getElementById("nextLevelHint").textContent=`${info.toNext} XP to next level`;
+  document.getElementById("totalXpLabel").textContent=`Lifetime XP: ${state.totalXpLifetime}`;
+  document.getElementById("xpRangeLabel").textContent=`${info.inLevelXp} / ${info.needed}`;
+  document.getElementById("levelFill").style.width=`${info.inLevelXp/info.needed*100}%`;
+
+  renderGoalTrack(); renderTasks(); renderRewards(); renderMilestones(); renderGraphs(); renderAlert(alerts); saveState();
+}
+document.getElementById("addTaskBtn").onclick=addTask;
+document.getElementById("addRewardBtn").onclick=addReward;
+document.getElementById("addMilestoneBtn").onclick=addMilestone;
+["taskName","taskPoints"].forEach(id=>document.getElementById(id).addEventListener("keydown",e=>{if(e.key==="Enter")addTask()}));
+["rewardName","rewardPoints"].forEach(id=>document.getElementById(id).addEventListener("keydown",e=>{if(e.key==="Enter")addReward()}));
+["milestoneTime","milestoneXp","milestonePenalty","milestonePunishment"].forEach(id=>document.getElementById(id).addEventListener("keydown",e=>{if(e.key==="Enter")addMilestone()}));
+document.getElementById("resetDayBtn").onclick=()=>{ state.tasks=state.tasks.map(t=>({...t,done:false})); state.totalXp=0; state.currentDate=todayKey(); state.historyHourly[state.currentDate]=Array(24).fill(0); state.historyDaily[state.currentDate]=0; state.milestones=state.milestones.map(m=>({...m,resultDate:null,passed:null})); saveState(); render(); };
+document.getElementById("seedBtn").onclick=()=>{ state=defaultState(); saveState(); render(); };
+setInterval(render, 60000);
+render();
+</script>
+</body>
+</html>
